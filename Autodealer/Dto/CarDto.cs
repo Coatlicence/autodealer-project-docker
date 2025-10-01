@@ -17,5 +17,5 @@ public class CarDto
     /// <summary>
     /// Двигатель.
     /// </summary>
-    public string Engine { get; set; }
+    public string EngineId { get; set; }
 }

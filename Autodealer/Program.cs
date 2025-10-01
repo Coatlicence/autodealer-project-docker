@@ -1,7 +1,12 @@
 // Подбор автомобилей
 using Autodealer.Data;
+using Autodealer.Extensions;
+using Autodealer.GraphQL.GraphQLSchema;
 using Autodealer.Services;
 using Autodealer.Services.Caching;
+using GraphQL;
+using GraphQL.Server;
+using GraphQL.Server.Ui.Playground;
 using Microsoft.IdentityModel.Tokens;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -29,12 +34,18 @@ builder.Services.AddAuthentication("Bearer")
         };
     });
 
+builder.Services.AddScoped<AppSchema>();
+
+builder.Services.AddGraphQL()
+    .AddSystemTextJson()
+    .AddGraphTypes(typeof(AppSchema), ServiceLifetime.Scoped);
+
 // Add services to the container.
 builder.Services.AddControllers();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerWithAuth();
 
 builder.Services.AddSingleton<MongoDbService>();
 builder.Services.AddSingleton<ProducerService>();
@@ -79,6 +90,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+
+app.UseGraphQL<AppSchema>();
+app.UseGraphQLPlayground(options: new PlaygroundOptions());
 
 app.UseAuthentication();
 app.UseAuthorization();
