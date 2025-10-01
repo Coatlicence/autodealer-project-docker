@@ -2,6 +2,9 @@
 using Autodealer.Data;
 using Autodealer.Extensions;
 using Autodealer.GraphQL.GraphQLSchema;
+using Autodealer.GraphQL.GraphQLTypes;
+using Autodealer.Repositories;
+using Autodealer.Repositories.Interfaces;
 using Autodealer.Services;
 using Autodealer.Services.Caching;
 using GraphQL;
@@ -34,11 +37,32 @@ builder.Services.AddAuthentication("Bearer")
         };
     });
 
-builder.Services.AddScoped<AppSchema>();
+builder.Services.AddSingleton<MongoDbService>();
+builder.Services.AddSingleton<ProducerService>();
+builder.Services.AddTransient<ICarRepository, CarRepository>();
+builder.Services.AddTransient<ICarService, CarService>();
+builder.Services.AddTransient<IRedisCacheService, RedisCacheService>();
 
-builder.Services.AddGraphQL()
+builder.Services.AddTransient<AppQuery>();
+builder.Services.AddTransient<CarType>();
+builder.Services.AddTransient<AppSchema>();
+
+builder.Services.AddGraphQL(b => b
     .AddSystemTextJson()
-    .AddGraphTypes(typeof(AppSchema), ServiceLifetime.Scoped);
+    .AddErrorInfoProvider(opt => 
+    {
+        opt.ExposeExceptionDetails = builder.Environment.IsDevelopment();
+        opt.ExposeExtensions = true;
+        opt.ExposeCode = builder.Environment.IsDevelopment();
+    })
+    .ConfigureExecutionOptions(opt => 
+    {
+        opt.EnableMetrics = true;
+        opt.ThrowOnUnhandledException = builder.Environment.IsDevelopment();
+    })
+    .AddSchema<AppSchema>()
+    .AddGraphTypes(typeof(AppSchema).Assembly)
+);
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -46,11 +70,6 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerWithAuth();
-
-builder.Services.AddSingleton<MongoDbService>();
-builder.Services.AddSingleton<ProducerService>();
-builder.Services.AddScoped<ICarService, CarService>();
-builder.Services.AddScoped<IRedisCacheService, RedisCacheService>();
 
 var resourceBuilder = ResourceBuilder.CreateDefault()
     .AddService(serviceName: "Autodealer", serviceVersion: "1.0.0");
@@ -91,11 +110,12 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 
-app.UseGraphQL<AppSchema>();
-app.UseGraphQLPlayground(options: new PlaygroundOptions());
-
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapGraphQL("/graphql");
+
+app.UseGraphQLGraphiQL("/ui/graphql");
 
 app.MapPrometheusScrapingEndpoint();
 
