@@ -18,7 +18,7 @@ public sealed class CarType : ObjectGraphType<Car>
             .Description("The model of the car");
         Field(x => x.Generation, nullable: true)
             .Description("The generation of the car");
-        Field(x => x.EngineId, nullable: true)
-            .Description("The engine identifier");
+        Field(x => x.Engine, nullable: true)
+            .Description("The engine of the car");
     }
 }
