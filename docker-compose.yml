@@ -145,9 +145,21 @@
         - "16686:16686"
         - "6831:6831/udp"
       
+  python-web:
+    image: python:3.9-slim
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: sh -c "pip install flask && python app.py"
+    networks:
+      - app-network
+      
 networks:
   kafka:
   autodealer:
+  app-network:
     driver: bridge
     
 volumes:
