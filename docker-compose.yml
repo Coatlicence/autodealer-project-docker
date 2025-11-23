@@ -156,6 +156,8 @@
     networks:
       - app-network
       
+      
+      
 networks:
   kafka:
   autodealer:
